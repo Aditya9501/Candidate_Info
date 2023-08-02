@@ -1,0 +1,160 @@
+from selenium import webdriver
+import pandas as pd
+import time
+from time import sleep
+from selenium.webdriver.common.by import By
+from selenium.webdriver import ActionChains
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import Select
+
+def election_data_link():
+    driver = webdriver.Chrome()
+    driver.get("https://affidavit.eci.gov.in/")
+    
+    wait = WebDriverWait(driver,10)
+    
+    # Dropdown Locators
+    dropdown1_locator = (By.XPATH, "(//select[@id='electionType'])[1]")
+    dropdown2_locator = (By.XPATH, "(//select[@id='election'])[1]")
+    dropdown3_locator = (By.XPATH, "(//select[@id='states'])[1]")
+    dropdown4_locator = (By.XPATH, "(//select[@id='constId'])[1]")
+    
+    wait.until(EC.visibility_of_all_elements_located((By.XPATH,"(//select[@id='electionType'])[1]/option")))
+    
+    election_type_list = [i.text for i in driver.find_elements(By.XPATH,"(//select[@id='electionType'])[1]/option")]
+    
+    print('\n'.join(election_type_list))
+    print()
+    
+    try:
+        # First Input
+        value1 = input("Enter value for Election Type from above list: ")
+        print()
+
+        dropdown1 = Select(driver.find_element(*dropdown1_locator))
+        dropdown1.select_by_visible_text(value1)
+        time.sleep(2)
+
+        wait.until(EC.visibility_of_all_elements_located((By.XPATH,"(//select[@id='election'])[1]/option")))
+
+        election_list = [i.text for i in driver.find_elements(By.XPATH,"(//select[@id='election'])[1]/option")][1:]
+
+        print('\n'.join(election_list))
+        print()
+
+        # Second Input
+        value2 = input("Enter value for Election from above list from above list: ")
+        print()
+
+        dropdown2 = Select(driver.find_element(*dropdown2_locator))
+        dropdown2.select_by_visible_text(value2)
+        time.sleep(2)
+
+        wait.until(EC.visibility_of_all_elements_located((By.XPATH,"(//select[@id='states'])[1]/option")))
+
+        state_list = [i.text for i in driver.find_elements(By.XPATH,"(//select[@id='states'])[1]/option")][1:]
+
+        print('\n'.join(state_list))
+        print()
+
+        # Third Input
+        value3 = input("Enter value for State from above list: ")
+        print()
+
+        dropdown3 = Select(driver.find_element(*dropdown3_locator))
+        dropdown3.select_by_visible_text(value3)
+        time.sleep(5)
+
+        wait.until(EC.visibility_of_all_elements_located((By.XPATH,"//select[@id='constId'][1]/option")))
+
+        consti_list = [i.text for i in driver.find_elements(By.XPATH,"//select[@id='constId'][1]/option")][1:]
+
+        print('\n'.join(consti_list))
+        print()
+
+        # Fourth Input
+        value4 = input("Enter value for Constituency from above list: ")
+        print()
+
+        dropdown4 = Select(driver.find_element(*dropdown4_locator))
+        dropdown4.select_by_visible_text(value4)
+    
+    except:
+        print('Try again')
+    
+    try:
+        wait.until(EC.element_to_be_clickable((By.XPATH,"//button[normalize-space()='Filter']"))).click()
+
+        wait.until(EC.visibility_of_element_located((By.XPATH,"(//div[@class='col-md-2 col-sm-3 col-xs-6'])[1]/button/div/p/span")))
+        total = driver.find_element(By.XPATH,"(//div[@class='col-md-2 col-sm-3 col-xs-6'])[1]/button/div/p/span").text
+
+        print(f'Total Candidates for provided search is {total}')
+
+        wait.until(EC.visibility_of_all_elements_located((By.XPATH,"(//a[contains(text(),'View more')])")))
+        per_page_candidate_list = len((driver.find_elements(By.XPATH,"(//a[contains(text(),'View more')])")))
+
+        page = int(float(total)/per_page_candidate_list)
+
+        link = []
+
+        j=0
+
+        while j < page + 1:
+
+            wait.until(EC.visibility_of_all_elements_located((By.XPATH,"(//a[contains(text(),'View more')])")))
+            for i in driver.find_elements(By.XPATH,"(//a[contains(text(),'View more')])"):
+                link.append(i.get_attribute('href'))
+
+            driver.execute_script("window.scrollBy(0, document.body.scrollHeight)")
+            try:
+                wait.until(EC.element_to_be_clickable((By.XPATH,"//a[contains(text(),'›')]"))).click()
+            except:
+                pass
+
+            j+=1
+
+        return link
+    except:
+        driver.close()
+
+def candidate_details(url):
+    driver = webdriver.Chrome()
+    driver.get(url)
+    driver.maximize_window()
+    wait = WebDriverWait(driver,10)
+    
+    try:
+        party_e = driver.find_element(By.XPATH,"(//div[@class='col-sm-6'])[2]").text
+        party_l = driver.find_element(By.XPATH,"(//div[@class='col-sm-6'])[4]").text
+
+        Name = driver.find_element(By.XPATH,"(//div[@class='col-sm-6'])[6]").text
+        name_l = driver.find_element(By.XPATH,"(//div[@class='col-sm-6'])[8]").text
+
+        consti = driver.find_element(By.XPATH,"(//div[@class='col-sm-6'])[10]").text
+
+        status = driver.find_element(By.XPATH,"(//div[@class='col-sm-6'])[16]").text
+
+        state = driver.find_element(By.XPATH,"(//div[@class='col-sm-6'])[12]").text
+
+        fat_hus = driver.find_element(By.XPATH,"(//div[@class='col-sm-6'])[18]").text
+
+        fat_hus_l = driver.find_element(By.XPATH,"(//div[@class='col-sm-6'])[19]").text
+
+        address = driver.find_element(By.XPATH,"(//div[@class='col-sm-6'])[22]").text
+
+        gen = driver.find_element(By.XPATH,"(//div[@class='col-sm-6'])[23]").text
+
+        age = driver.find_element(By.XPATH,"(//div[@class='col-sm-6'])[24]").text
+
+        data = {"Name of the Candidate": Name, "Father's / Husband's Name" : fat_hus, "Party":party_e ,
+                "Assembly Constituency":consti,"State": state, "Sataus":status,
+                "Address" : address,'Gender': gen, "Age": age, "Name in Hindi":name_l,
+                "Father's / Husband's Name in Hindi":fat_hus_l, "Party Name in Hindi":party_l}
+
+        df = pd.DataFrame(data,index=[0])
+        
+    except: 
+        driver.close()
+    finally:
+        return df
